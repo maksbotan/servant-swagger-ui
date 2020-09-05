@@ -37,6 +37,7 @@
 module Servant.Swagger.UI.Core (
     -- * Swagger UI API
     SwaggerSchemaUI,
+    GenericSwaggerSchemaUI,
     SwaggerSchemaUI',
 
     -- * Implementation details
@@ -46,6 +47,7 @@ module Servant.Swagger.UI.Core (
     Handler,
     ) where
 
+import Data.Aeson                     (ToJSON)
 import Data.ByteString                (ByteString)
 import Data.Swagger                   (Swagger)
 import GHC.TypeLits                   (KnownSymbol, Symbol, symbolVal)
@@ -66,9 +68,11 @@ import qualified Data.Text as T
 -- \/swagger-ui\/index.html
 -- \/swagger-ui\/...
 -- @
---
-type SwaggerSchemaUI (dir :: Symbol) (schema :: Symbol) =
-    SwaggerSchemaUI' dir (schema :> Get '[JSON] Swagger)
+type SwaggerSchemaUI (dir :: Symbol) (schema :: Symbol) = GenericSwaggerSchemaUI dir schema Swagger
+
+-- | This is generalized over any @a@ instead of hardcoding @Swagger@ to allow for @OpenAPI 3.0@.
+type GenericSwaggerSchemaUI (dir :: Symbol) (schema :: Symbol) a =
+    SwaggerSchemaUI' dir (schema :> Get '[JSON] a)
 
 -- | Use 'SwaggerSchemaUI'' when you need even more control over
 -- where @swagger.json@ is served (e.g. subdirectory).
@@ -101,9 +105,9 @@ instance (KnownSymbol dir, HasLink api, Link ~ MkLink api Link, IsElem api api)
         proxyApi = Proxy :: Proxy api
 
 swaggerSchemaUIServerImpl
-    :: (Server api ~ Handler Swagger)
+    :: (ToJSON a, Server api ~ Handler a)
     => T.Text -> [(FilePath, ByteString)]
-    -> Swagger -> Server (SwaggerSchemaUI' dir api)
+    -> a -> Server (SwaggerSchemaUI' dir api)
 swaggerSchemaUIServerImpl indexTemplate files swagger
   = swaggerSchemaUIServerImpl' indexTemplate files $ return swagger
 
