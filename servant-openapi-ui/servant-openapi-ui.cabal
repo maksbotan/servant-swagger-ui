@@ -21,8 +21,8 @@ license-file:       LICENSE
 build-type:         Simple
 tested-with:
   GHC ==8.6.5
-   || ==8.8.3
-   || ==8.10.1
+   || ==8.8.4
+   || ==8.10.2
 
 extra-source-files:
   CHANGELOG.md
